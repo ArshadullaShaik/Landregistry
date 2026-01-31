@@ -30,6 +30,11 @@ const Dashboard = () => {
 
         try {
             setUploading(true);
+
+            // Calculate File Hash
+            const buffer = await selectedFile.arrayBuffer();
+            const hash = ethers.keccak256(new Uint8Array(buffer));
+
             const data = new FormData();
             data.append('file', selectedFile);
 
@@ -55,7 +60,8 @@ const Dashboard = () => {
 
             setFormData(prev => ({
                 ...prev,
-                datahavenId: cid
+                datahavenId: cid,
+                documentHash: hash
             }));
 
             alert(`Document uploaded! CID: ${cid}`);
@@ -185,9 +191,12 @@ const Dashboard = () => {
                             />
                         </div>
 
-                        {/* Hidden Document Hash */}
-                        <div className="hidden">
+                        <div>
+                            <label className="block text-gray-700 font-semibold mb-2">Document Hash (Auto-filled)</label>
                             <input
+                                type="text"
+                                placeholder="SHA-256 / Keccak-256 Hash"
+                                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-gray-100"
                                 value={formData.documentHash}
                                 onChange={(e) => setFormData({ ...formData, documentHash: e.target.value })}
                             />
