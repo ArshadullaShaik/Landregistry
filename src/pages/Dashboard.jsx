@@ -56,7 +56,7 @@ const Dashboard = () => {
             }
 
             const result = await response.json();
-            const cid = "0x" + result.IpfsHash;
+            const cid = result.IpfsHash; // IPFS CID without "0x" prefix
 
             setFormData(prev => ({
                 ...prev,
@@ -90,19 +90,59 @@ const Dashboard = () => {
                 formattedHash = ethers.id(documentHash); // Keccak256 hash of string
             }
 
+            // Detailed logging
+            console.log("=== REGISTRATION DEBUG ===");
+            console.log("Land ID:", landId, "Type:", typeof landId);
+            console.log("Owner Address:", account);
+            console.log("Document Hash:", formattedHash);
+            console.log("DataHaven ID:", datahavenId, "Length:", datahavenId.length);
+            console.log("Contract Address:", await contract.getAddress());
+
+            // Check if user is officer
+            const isOfficer = await contract.officers(account);
+            console.log("Is Officer?", isOfficer);
+
+            if (!isOfficer) {
+                alert("You are not an officer! Please add yourself as an officer first.");
+                setIsLoading(false);
+                return;
+            }
+
+            console.log("Attempting to register land...");
+
             const tx = await contract.registerLand(
                 landId,
                 account,
                 formattedHash,
-                datahavenId
+                datahavenId,
+                { gasLimit: 500000 } // Explicitly set gas limit
             );
+
+            console.log("Transaction sent:", tx.hash);
             await tx.wait();
+            console.log("Transaction confirmed!");
+
             alert("Land Registered Successfully!");
             setFormData({ landId: '', ownerDetails: '', documentHash: '0x0000000000000000000000000000000000000000000000000000000000000000', datahavenId: '' });
             setSelectedFile(null);
         } catch (error) {
-            console.error(error);
-            alert("Registration failed: " + (error.reason || error.message));
+            console.error("=== REGISTRATION ERROR ===");
+            console.error("Full error:", error);
+            console.error("Error message:", error.message);
+            console.error("Error reason:", error.reason);
+            console.error("Error code:", error.code);
+            console.error("Error data:", error.data);
+
+            let errorMessage = "Registration failed: ";
+            if (error.reason) {
+                errorMessage += error.reason;
+            } else if (error.message) {
+                errorMessage += error.message;
+            } else {
+                errorMessage += "Unknown error - check console for details";
+            }
+
+            alert(errorMessage);
         } finally {
             setIsLoading(false);
         }
@@ -149,27 +189,62 @@ const Dashboard = () => {
                                 required
                             />
                         </div>
+
                         <div>
-                            <label className="block text-gray-700 font-semibold mb-2">Document Hash / Content</label>
+                            <label className="block text-gray-700 font-semibold mb-2">Owner Details (Optional)</label>
                             <input
                                 type="text"
-                                placeholder="Verification Hash or String"
+                                placeholder="Name, Address, etc."
                                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                                value={formData.documentHash}
-                                onChange={(e) => setFormData({ ...formData, documentHash: e.target.value })}
-                                required
+                                value={formData.ownerDetails}
+                                onChange={(e) => setFormData({ ...formData, ownerDetails: e.target.value })}
                             />
                         </div>
+
                         <div>
-                            <label className="block text-gray-700 font-semibold mb-2">Data Haven ID</label>
+                            <label className="block text-gray-700 font-semibold mb-2">Document Upload (PNG/PDF)</label>
+                            <div className="flex gap-2">
+                                <input
+                                    type="file"
+                                    accept="image/png,application/pdf"
+                                    className="w-full p-2 border border-gray-300 rounded-lg"
+                                    onChange={(e) => setSelectedFile(e.target.files[0])}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={uploadToPinata}
+                                    disabled={uploading || !selectedFile}
+                                    className="bg-green-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-green-700 disabled:opacity-50 transition-all"
+                                >
+                                    {uploading ? '⏳' : '📤 Upload'}
+                                </button>
+                            </div>
+                            <p className="text-xs text-gray-500 mt-1">Upload to IPFS via Pinata</p>
+                        </div>
+
+                        <div>
+                            <label className="block text-gray-700 font-semibold mb-2">IPFS CID (Editable)</label>
                             <input
                                 type="text"
-                                placeholder="IPFS CID or ID"
+                                placeholder="Will be filled after upload"
                                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                                 value={formData.datahavenId}
                                 onChange={(e) => setFormData({ ...formData, datahavenId: e.target.value })}
-                                required
                             />
+                            <p className="text-xs text-gray-500 mt-1">Auto-filled after upload, but you can edit it</p>
+                        </div>
+
+                        <div>
+                            <label className="block text-gray-700 font-semibold mb-2">Document Hash (Auto-filled)</label>
+                            <input
+                                type="text"
+                                placeholder="Keccak-256 Hash"
+                                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-gray-100"
+                                value={formData.documentHash}
+                                onChange={(e) => setFormData({ ...formData, documentHash: e.target.value })}
+                                readOnly
+                            />
+                            <p className="text-xs text-gray-500 mt-1">Generated automatically from uploaded file</p>
                         </div>
 
                         <button
@@ -177,13 +252,13 @@ const Dashboard = () => {
                             disabled={isLoading}
                             className="mt-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-xl font-bold hover:shadow-lg transition-all disabled:opacity-50"
                         >
-                            {isLoading ? 'Processing...' : 'Register Land'}
+                            {isLoading ? 'Processing...' : '📝 Register Land'}
                         </button>
-                    </form >
-                </div >
+                    </form>
+                </div>
 
-    {/* Search Land Section */ }
-    < div className = "flex flex-col gap-8" >
+                {/* Search Land Section */}
+                <div className="flex flex-col gap-8">
                     <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100">
                         <div className="flex items-center gap-3 mb-6">
                             <Search className="text-indigo-600" size={28} />
@@ -198,7 +273,7 @@ const Dashboard = () => {
                                 onChange={(e) => setSearchId(e.target.value)}
                                 required
                             />
-                            <button type="submit" className="bg-indigo-600 text-white p-3 rounded-lg hover:bg-indigo-700">
+                            <button type="submit" className="bg-indigo-600 text-white p-3 rounded-lg hover:bg-indigo-700 transition-all">
                                 <Search />
                             </button>
                         </form>
@@ -211,10 +286,10 @@ const Dashboard = () => {
                             Use the search tool to verify ownership, view details, or check dispute status of any registered land asset.
                         </p>
                     </div>
-                </div >
+                </div>
 
-            </div >
-        </div >
+            </div>
+        </div>
     );
 };
 

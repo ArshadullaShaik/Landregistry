@@ -8,6 +8,8 @@ import LandDetails from './pages/LandDetails';
 import OfficerPanel from './pages/OfficerPanel';
 import AddOfficer from './pages/AddOfficer';
 import Deploy from './pages/Deploy';
+import TransferOwnership from './pages/TransferOwnership';
+import RaiseDispute from './pages/RaiseDispute';
 
 const App = () => {
   return (
@@ -17,6 +19,8 @@ const App = () => {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/transfer" element={<TransferOwnership />} />
+          <Route path="/dispute" element={<RaiseDispute />} />
           <Route path="/officer" element={<OfficerPanel />} />
           <Route path="/add-officer" element={<AddOfficer />} />
           <Route path="/deploy" element={<Deploy />} />
