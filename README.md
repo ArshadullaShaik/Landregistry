@@ -295,12 +295,6 @@ This project is for educational purposes.
 
 ---
 
-## 👨‍💻 Author
-
-Developed with assistance from **Google Gemini (Antigravity AI)**
-
----
-
 ## 🙏 Acknowledgments
 
 - OpenZeppelin for smart contract patterns
