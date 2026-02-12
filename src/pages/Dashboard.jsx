@@ -202,11 +202,19 @@ const Dashboard = () => {
                         </div>
 
                         <div>
+<<<<<<< HEAD
                             <label className="block text-gray-700 font-semibold mb-2">Document Upload (PNG/PDF)</label>
                             <div className="flex gap-2">
                                 <input
                                     type="file"
                                     accept="image/png,application/pdf"
+=======
+                            <label className="block text-gray-700 font-semibold mb-2">Document (PNG/JPEG Upload)</label>
+                            <div className="flex gap-2">
+                                <input
+                                    type="file"
+                                    accept="image/png, image/jpeg, image/jpg"
+>>>>>>> 9565df375743698e9d91ec802b299d8f9534a8b0
                                     className="w-full p-2 border border-gray-300 rounded-lg"
                                     onChange={(e) => setSelectedFile(e.target.files[0])}
                                 />
